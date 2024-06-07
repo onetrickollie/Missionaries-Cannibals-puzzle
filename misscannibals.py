@@ -54,9 +54,35 @@ Example: EightPuzzle Problem's .result() method:
         return tuple(new_state)
 """
 
-def actions(state):
-    ...
-    return NotImplementedError
+def actions(self,state):
+    #define tuple
+    m,c, onLeft = state
+    #define action list
+    actions = []
+
+    if onLeft:
+        if m >= 2:
+            actions.append('MM')
+        if m >= 1 and c >= 1:
+            actions.append('MC')
+        if c >= 2:
+            actions.append('CC')
+        if m >= 1:
+            actions.append('M')
+        if c >= 1:
+            actions.append('C')
+    else:
+        if (self.M - m) >= 2:
+            actions.append('MM')
+        if (self.M - m) >= 1 and (self.C - c) >= 1:
+            actions.append('MC')
+        if (self.C - c) >= 2:
+            actions.append('CC')
+        if (self.M - m) >= 1:
+            actions.append('M')
+        if (self.C - c) >= 1:
+            actions.append('C')
+    return actions
 
 """
 Example: EightPuzzle Problem's .action() method:
@@ -87,7 +113,8 @@ Example: EightPuzzle Problem's .action() method:
 '''
 if __name__ == '__main__':
     # Initialize 3-tuple initial state of (3,3, True) into an mc object.
-    mc = MissCannibals(3,3)
+    mc = MissCannibals(M=3,C=3)
+
 
     # Test action function
     #
@@ -95,10 +122,9 @@ if __name__ == '__main__':
     # Expected Output: ['CC', 'C', 'M']
 
     # Test DFGS and BFGS on the mc object.
-	#
-	# path = depth_first_graph_search(mc).solution()
-    # print(path)
-    # path = breadth_first_graph_search(mc).solution()
-    # print(path)
+	path = depth_first_graph_search(mc).solution()
+    print(path)
+    path = breadth_first_graph_search(mc).solution()
+    print(path)
     # Example Output: ['MC', 'M', 'CC', 'C', 'MM', 'MC', 'MM', 'C', 'CC', 'M', 'MC']
 
