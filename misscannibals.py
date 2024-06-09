@@ -1,130 +1,119 @@
 from search import *
 
+'''
+Program: MissCannibals.py
+Date: Thursday, June 6, 2024
+Author: Jahn Jamison L. Tibayan, Kai Liu, Sean Jacob Evasco
+'''
+
 class MissCannibals(Problem):
     def __init__(self, M=3, C=3, goal=(0, 0, False)):
-        '''
-            This init function gives the default for 3-tuple when called.
-            Rather than using (3,3,L) or R, we are using a boolean onLeft.
-            if onLeft is true its on the left, if not then right.
-        '''
         initial = (M, C, True)
         self.M = M
         self.C = C
         super().__init__(initial, goal)
 
-# TODO
-# [X] Constructor/init: (Given by prof.)
-# [X] method: goal_test(state) (Jahn)
-# [ ] method: result(state, action) -> returns new state
-#     reached from the given state and action
-# [ ] method: actions(state) return a list of valid actions given state
-# [!] Prof says implement them in order and test all the output in driver function
+    def goal_test(self, state):
+        """
+        Return True if the state is a goal. The default method compares the
+        state to self.goal or checks for state in self.goal if it is a
+        list, as specified in the constructor.
+        """
+        if isinstance(self.goal, list):
+            return is_in(state, self.goal)
+        else:
+            return state == self.goal
 
-# CODE GOES BELOW HERE
-
-def goal_test(self, state):
-    """
-    Return True if the state is a goal. The default method compares the
-    state to self.goal or checks for state in self.goal if it is a
-    list, as specified in the constructor.
-    """
-    if isinstance(self.goal, list):
-        return is_in(state, self.goal)
-    else:
-        return state == self.goal
-
-def result(state):
-    ...
-    return NotImplementedError
-
-"""
-Example: EightPuzzle Problem's .result() method:
     def result(self, state, action):
-        Given state and action, return a new state that is the result of the action.
-        Action is assumed to be a valid action in the state 
+        m, c, isLeft = state
+        new_state = [m, c, isLeft]
 
-        # blank is the index of the blank square
-        blank = self.find_blank_square(state)
-        new_state = list(state)
+        delta = {
+            'MM': [2, 0, 1],
+            'MC': [1, 1, 1],
+            'CC': [0, 2, 1],
+            'C': [0, 1, 1],
+            'M': [1, 0, 1],
+        }
 
-        delta = {'UP': -3, 'DOWN': 3, 'LEFT': -1, 'RIGHT': 1}
-        neighbor = blank + delta[action]
-        new_state[blank], new_state[neighbor] = new_state[neighbor], new_state[blank]
+        if isLeft:
+            new_state = [new_state[i] - delta[action][i] for i in range(len(new_state))]
+        else:
+            new_state = [new_state[i] + delta[action][i] for i in range(len(new_state))]
+
+        new_state[2] = not isLeft # convert the last element back into a True/False value rather than 0/1
 
         return tuple(new_state)
-"""
 
-def actions(self,state):
-    #define tuple
-    m,c, onLeft = state
-    #define action list
-    actions = []
-
-    if onLeft:
-        if m >= 2:
-            actions.append('MM')
-        if m >= 1 and c >= 1:
-            actions.append('MC')
-        if c >= 2:
-            actions.append('CC')
-        if m >= 1:
-            actions.append('M')
-        if c >= 1:
-            actions.append('C')
-    else:
-        if (self.M - m) >= 2:
-            actions.append('MM')
-        if (self.M - m) >= 1 and (self.C - c) >= 1:
-            actions.append('MC')
-        if (self.C - c) >= 2:
-            actions.append('CC')
-        if (self.M - m) >= 1:
-            actions.append('M')
-        if (self.C - c) >= 1:
-            actions.append('C')
-    return actions
-
-"""
-Example: EightPuzzle Problem's .action() method:
     def actions(self, state):
-        Return the actions that can be executed in the given state.
-        The result would be a list, since there are only four possible actions
-        in any given state of the environment
+        """
+        1. unpack tuple
+        2. define actions list
+        3. remove actions based on invalid moves
+        """
+        m, c, onLeft = state
+        possible_actions = ['MM', 'MC', 'CC', 'C', 'M']
 
-        possible_actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
-        index_blank_square = self.find_blank_square(state)
-
-        if index_blank_square % 3 == 0:
-            possible_actions.remove('LEFT')
-        if index_blank_square < 3:
-            possible_actions.remove('UP')
-        if index_blank_square % 3 == 2:
-            possible_actions.remove('RIGHT')
-        if index_blank_square > 5:
-            possible_actions.remove('DOWN')
+        if onLeft:
+            if m != 2 and c != 1:
+                possible_actions.remove('MM')
+                # if M < 2 you have insufficient M's
+                # if M is > 2 he will be outnumbered post-move, unless there is one C.
+            if m > c:
+                possible_actions.remove('MC')
+                # if M < C on LEFT, there MUST be at least one c on RIGHT. (ex. 3 2 L implies 1 C on RIGHT)
+                # therefore moving MC will leave the M's outnumbered on RIGHT due to the extra C on RIGHT.
+            if c < 2:
+                possible_actions.remove('CC')
+            if c < 1:
+                possible_actions.remove('C')
+            if m < 1 or c == m:
+                possible_actions.remove('M')
+        else:
+            if m > 1:
+                possible_actions.remove('MM')
+                # if M < 1, there is either 1 on RIGHT or 0 on RIGHT--insufficient.
+            if m > 2 or c > 2 or c > m:
+                possible_actions.remove('MC')
+                # if M or C is 3, there are no M/C's on RIGHT to move LEFT.
+                # c > m accounts for state of 0 1 R, because moving to 1 2 L would be invalid
+            if c > 1:
+                # if C < 1, there is either 1 on RIGHT or 0 on RIGHT--insufficient.
+                possible_actions.remove('CC')
+            if c > 2:
+                possible_actions.remove('C')
+                # insufficient C's on RIGHT if 3 on LEFT
+            if m > 2:
+                possible_actions.remove('M')
+                # insufficient M's on RIGHT if 3 on LEFT
 
         return possible_actions
-"""
 
-'''
-"MAIN" FUNCTION
-    Put functions to test output here
-    Uncomment DF Graph and BF Graph and compare output
-'''
+
 if __name__ == '__main__':
-    # Initialize 3-tuple initial state of (3,3, True) into an mc object.
-    mc = MissCannibals(M=3,C=3)
+    # Initialize 3-tuple initial state of (3,3, True) into a mc object.
+    mc = MissCannibals(3,3)
 
+    # Test result
+    print(f"\nresult((3,3,True), 'MC') -> '((2,2,False))': {mc.result(mc.initial, 'MC')}")
+    print(f"result((3,3,True), 'CC') -> '((3,1,False))': {mc.result(mc.initial, 'CC')}")
+    print(f"result((3,3,True), 'C') -> '((3,2,False))': {mc.result(mc.initial, 'C')}")
 
-    # Test action function
-    #
-    # print(mc.actions((3, 2, True)))
-    # Expected Output: ['CC', 'C', 'M']
+    # Test goal_state
+    test_state_fail = (3,3,True)
+    test_state_win = (0,0, False)
+    print(f"\ngoal_test(3,3,True) -> 'False': {mc.goal_test(test_state_fail)}")
+    print(f"goal_test(0,0, False) -> 'True': {mc.goal_test(test_state_win)}")
+
+    # Test action
+    print(f"\naction((3, 3, True) -> ['MC', 'CC', 'C']: {mc.actions((3, 3, True))}")
+    print(f"action((3, 2, True) -> ['CC', 'C', 'M']: {mc.actions((3, 2, True))}")
+    print(f"action((3, 0, False) -> ['CC', 'C']: {mc.actions((3, 0, False))}")
 
     # Test DFGS and BFGS on the mc object.
-	path = depth_first_graph_search(mc).solution()
-    print(path)
+    path = depth_first_graph_search(mc).solution()
+    print(f"\nDepth-First-Graph-Search: {path}")
     path = breadth_first_graph_search(mc).solution()
-    print(path)
-    # Example Output: ['MC', 'M', 'CC', 'C', 'MM', 'MC', 'MM', 'C', 'CC', 'M', 'MC']
+    print(f"Breadth-First-Graph-Search: {path}")
+
 
