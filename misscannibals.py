@@ -41,74 +41,51 @@ class MissCannibals(Problem):
         else:
             new_state = [new_state[i] + delta[action][i] for i in range(len(new_state))]
 
-        new_state[2] = not isLeft # convert the last element back into a True/False value rather than 0/1
+        new_state[2] = not isLeft  # convert the last element back into a True/False value rather than 0/1
 
         return tuple(new_state)
 
     def actions(self, state):
         """
-        1. unpack tuple
-        2. define actions list
-        3. remove actions based on invalid moves
+        This function unpacks the tuple and utilizes the result function to generate the result state
+        for every possible action. If that action doesnt result in missionaries being outnumbered on either side,
+        as long as m != 0, then the action is appended.
         """
         m, c, onLeft = state
         possible_actions = ['MM', 'MC', 'CC', 'C', 'M']
+        valid_actions = []
 
-        if onLeft:
-            if m != 2 and c != 1:
-                possible_actions.remove('MM')
-                # if M < 2 you have insufficient M's
-                # if M is > 2 he will be outnumbered post-move, unless there is one C.
-            if m > c:
-                possible_actions.remove('MC')
-                # if M < C on LEFT, there MUST be at least one c on RIGHT. (ex. 3 2 L implies 1 C on RIGHT)
-                # therefore moving MC will leave the M's outnumbered on RIGHT due to the extra C on RIGHT.
-            if c < 2:
-                possible_actions.remove('CC')
-            if c < 1:
-                possible_actions.remove('C')
-            if m < 1 or c == m:
-                possible_actions.remove('M')
-        else:
-            if m > 1:
-                possible_actions.remove('MM')
-                # if M < 1, there is either 1 on RIGHT or 0 on RIGHT--insufficient.
-            if m > 2 or c > 2 or c > m:
-                possible_actions.remove('MC')
-                # if M or C is 3, there are no M/C's on RIGHT to move LEFT.
-                # c > m accounts for state of 0 1 R, because moving to 1 2 L would be invalid
-            if c > 1:
-                # if C < 1, there is either 1 on RIGHT or 0 on RIGHT--insufficient.
-                possible_actions.remove('CC')
-            if c > 2:
-                possible_actions.remove('C')
-                # insufficient C's on RIGHT if 3 on LEFT
-            if m > 2:
-                possible_actions.remove('M')
-                # insufficient M's on RIGHT if 3 on LEFT
+        for action in possible_actions:
+            new_state = self.result(state, action)
+            new_m, new_c, new_onLeft = new_state
 
-        return possible_actions
+            if (0 <= new_m <= self.M and 0 <= new_c <= self.C and
+                (new_m >= new_c or new_m == 0) and
+                ((self.M - new_m) >= (self.C - new_c) or (self.M - new_m) == 0)):
+                valid_actions.append(action)
 
+        return valid_actions
 
 if __name__ == '__main__':
     # Initialize 3-tuple initial state of (3,3, True) into a mc object.
     mc = MissCannibals(3,3)
 
     # Test result
-    print(f"\nresult((3,3,True), 'MC') -> '((2,2,False))': {mc.result(mc.initial, 'MC')}")
-    print(f"result((3,3,True), 'CC') -> '((3,1,False))': {mc.result(mc.initial, 'CC')}")
-    print(f"result((3,3,True), 'C') -> '((3,2,False))': {mc.result(mc.initial, 'C')}")
+    print(f"\nresult((3, 3, True), 'MC') -> '((2, 2 , False))': {mc.result(mc.initial, 'MC')}")
+    print(f"result((3, 3, True), 'CC') -> '((3, 1, False))': {mc.result(mc.initial, 'CC')}")
+    print(f"result((3, 3, True), 'C') -> '((3, 2, False))': {mc.result(mc.initial, 'C')}")
 
     # Test goal_state
     test_state_fail = (3,3,True)
     test_state_win = (0,0, False)
-    print(f"\ngoal_test(3,3,True) -> 'False': {mc.goal_test(test_state_fail)}")
-    print(f"goal_test(0,0, False) -> 'True': {mc.goal_test(test_state_win)}")
+    print(f"\ngoal_test(3, 3, True) -> 'False': {mc.goal_test(test_state_fail)}")
+    print(f"goal_test(0, 0, False) -> 'True': {mc.goal_test(test_state_win)}")
 
     # Test action
     print(f"\naction((3, 3, True) -> ['MC', 'CC', 'C']: {mc.actions((3, 3, True))}")
     print(f"action((3, 2, True) -> ['CC', 'C', 'M']: {mc.actions((3, 2, True))}")
     print(f"action((3, 0, False) -> ['CC', 'C']: {mc.actions((3, 0, False))}")
+    print(f"action((1, 1, False) -> ['MM', 'MC']: {mc.actions((1, 1, False))}")
 
     # Test DFGS and BFGS on the mc object.
     path = depth_first_graph_search(mc).solution()
